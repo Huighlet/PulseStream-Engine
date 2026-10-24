@@ -164,8 +164,15 @@ def main() -> None:
     bench_parser = subparsers.add_parser("bench", help="Execute streaming performance benchmarks")
     bench_parser.add_argument("-n", "--iterations", type=int, default=100000, help="Number of iterations")
 
+    serve_parser = subparsers.add_parser("serve", help="Launch HTTP/SSE Streaming Broker service")
+    serve_parser.add_argument("--host", default="0.0.0.0", help="Binding host address")
+    serve_parser.add_argument("--port", type=int, default=9092, help="Binding port (default: 9092)")
+
     args = parser.parse_args()
-    if args.command == "bench":
+    if args.command == "serve":
+        from pulsestream.server import serve
+        serve(host=args.host, port=args.port)
+    elif args.command == "bench":
         run_benchmark(iterations=args.iterations)
     else:
         parser.print_help()

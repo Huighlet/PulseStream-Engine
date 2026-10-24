@@ -2,7 +2,7 @@
 
 **High-Throughput In-Memory Event Streaming Broker, Partition Commit Log & Window Aggregator**
 
-[![Build Status](https://img.shields.io/badge/tests-21%20passed-brightgreen.svg)](https://github.com/Huighlet/PulseStream-Engine)
+[![Build Status](https://img.shields.io/badge/tests-26%20passed-brightgreen.svg)](https://github.com/Huighlet/PulseStream-Engine)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Zero AI Slop](https://img.shields.io/badge/codebase-zero%20ai%20slop-black.svg)](https://github.com/Huighlet/PulseStream-Engine)
@@ -210,6 +210,60 @@ tests/test_window.py::test_allowed_lateness_drops_expired_events PASSED  [100%]
 ### Executing Microsecond Benchmarks
 ```bash
 pulsestream bench -n 100000
+```
+
+---
+
+## Turnkey HTTP/SSE Server & Docker Deployment
+
+PulseStream-Engine includes an embedded HTTP streaming daemon offering REST ingest, consumer group coordinate endpoints, real-time Server-Sent Events (SSE) subscriptions, and an interactive developer UI.
+
+### 1. Launch Server via CLI
+
+```bash
+# Start broker service on port 9092
+pulsestream serve --host 0.0.0.0 --port 9092
+```
+
+Once initialized:
+- **Interactive Dashboard:** [`http://localhost:9092/`](http://localhost:9092/)
+- **Interactive Swagger / OpenAPI:** [`http://localhost:9092/docs`](http://localhost:9092/docs)
+- **Broker Health & Partition Metrics:** [`http://localhost:9092/health`](http://localhost:9092/health)
+
+### 2. Standalone Container Execution (Docker)
+
+```bash
+# Build production image
+docker build -t pulsestream-engine:latest .
+
+# Run standalone streaming container
+docker run -d --name pulsestream-broker -p 9092:9092 pulsestream-engine:latest
+
+# Verify broker health
+curl -s http://localhost:9092/health
+```
+
+### 3. Real-Time Streaming Usage Examples
+
+**Publish Event Record (with CRC32 Affinity Key):**
+```bash
+curl -X POST http://localhost:9092/v1/topics/telemetry.fleet/publish \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "truck_alpha",
+    "value": {"lat": 5.6037, "lon": -0.1870, "speed_kmh": 68.2}
+  }'
+```
+
+**Stream Real-Time Events via Server-Sent Events (SSE):**
+```bash
+# Push stream delivered live over persistent HTTP connection
+curl -N http://localhost:9092/v1/topics/telemetry.fleet/stream?partition=0
+```
+
+**Sequential Monotonic Batch Fetch:**
+```bash
+curl -s "http://localhost:9092/v1/topics/telemetry.fleet/records?partition=0&offset=0&limit=50"
 ```
 
 ---
